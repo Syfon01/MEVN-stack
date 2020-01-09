@@ -2,38 +2,46 @@ var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
+var bodyParser = require('body-parser');
 var logger = require('morgan');
 var mongoose = require('mongoose');
 
 var app = express();
 
 //connect to mongodb 
-mongoose.connect('mongodb://localhost:27017/express_app', function() {  
-  console.log('Connection has been made'); 
-}) 
-.catch(err => {  
-  console.error('App starting error:', err.stack);  process.exit(1); 
+mongoose.connect('mongodb://localhost:27017/express_app',  {  
+   useNewUrlParser: true,
+   useUnifiedTopology: true
+})
+var db = mongoose.connection;
+db.on("error", console.error.bind(console, "connection error"));
+db.once("open", function (callback) {
+  console.log("Connection Succeeded");
 });
+
+// view engine setup
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'pug');
+
+// uncomment after placing our favicon in /public 
+//app.use(favicon(path.join(__dirname, 'public', 'favicon.ico'))); 
+app.use(logger('dev'));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({
+  extended: false
+}));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Require file system module 
 var fs = require('file-system');
+
 // Include controllers
  fs.readdirSync('controllers').forEach(function (file)
   {  if(file.substr(-3) == '.js')
    {    const route = require('./controllers/' + file)  
      route.controller(app)  } 
     })
-
-
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'pug');
-
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
